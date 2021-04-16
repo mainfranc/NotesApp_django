@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Note
+from .models import Note, Comment
 
 
 class NoteSerializer(serializers.ModelSerializer):
@@ -19,3 +19,9 @@ class NoteSerializer(serializers.ModelSerializer):
             'views'
         ]
         read_only_fields = ('author', 'views', )
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = '__all__'

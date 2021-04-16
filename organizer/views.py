@@ -14,6 +14,7 @@ from django.http import HttpResponse
 from .serializers import NoteSerializer
 from .models import Note
 from .filters import NoteFilter
+from .local_settings import *
 
 
 class NoteViewSet(ListModelMixin,
@@ -119,5 +120,5 @@ class AboutView(APIView):
     View for about page
     """
     def get(self, request):
-        return HttpResponse(f"<p>current username: {request.user.username}</p><p>server version:</p>")
+        return HttpResponse(f"<p>current username: {request.user.username}</p><p>server: {SERVER_NAME}</p>")
 
