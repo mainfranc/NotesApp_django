@@ -15,11 +15,6 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-try:
-    from organizer.local_settings import *
-except ImportError:
-    pass
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
