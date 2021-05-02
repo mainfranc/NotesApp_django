@@ -1,4 +1,4 @@
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -16,6 +16,7 @@ from .models import Note
 from .filters import NoteFilter
 
 
+
 class NoteViewSet(ListModelMixin,
                         RetrieveModelMixin,
                         CreateModelMixin,
@@ -23,13 +24,7 @@ class NoteViewSet(ListModelMixin,
                         UpdateModelMixin,
                         GenericViewSet):
     """
-    Readonly view for notes
-
-    List:
-    view all
-
-    retrieve:
-    view concrete
+    View merged for api/v1
     """
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
@@ -51,7 +46,11 @@ class NoteViewSet(ListModelMixin,
             notes = self.get_serializer(self.filter_queryset(self.get_queryset()).filter(public_status=True)
                                         , many=True)
 
-        return Response(notes.data)
+        result = notes.data
+        for note in result:
+            new_qryset = self.get_queryset().filter(author=note['author'])
+            note['author'] = new_qryset[0].author.username
+        return Response(result)
 
     def retrieve(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -65,7 +64,8 @@ class NoteViewSet(ListModelMixin,
 
         Note.objects.filter(id=instance.id).update(views=instance.views+1)
         result = serializer.data
-        result['views'] = result.get('views', 0) + 1
+        result['views'] = instance.views + 1
+        result['author'] = instance.author.username
         return Response(result)
 
     def create(self, request, *args, **kwargs):
@@ -80,14 +80,27 @@ class NoteViewSet(ListModelMixin,
 
     def destroy(self, request, *args, **kwargs):
         record = self.get_object()
+        if request.user.id != record.author_id:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         record.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
+        record = self.get_object()
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+
+        if request.user.id != record.author_id:
+            if record.public_status:
+                if record.title == serializer.data['title'] and \
+                    record.note == serializer.data['note'] and \
+                    record.note_status == serializer.data['note_status'] and \
+                    record.importance_status == serializer.data['importance_status'] and \
+                    record.public_status == serializer.data['public_status']:
+                    Note.objects.filter(id=record.id).update()
+                    return Response(serializer.data)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        Note.objects.filter(id=record.id).update()
         return Response(serializer.data)
 
 
@@ -103,7 +116,10 @@ class NoteCreateViewSet(ListModelMixin,
 
 
 class AboutView(APIView):
-    """"""
+    """
+    View for about page
+    """
+    SERVER_NAME = 'mainfranc.pythonanywhere.com'
     def get(self, request):
-        return HttpResponse(f"<p>current username: {request.user.username}</p><p>server version:</p>")
+        return HttpResponse(f"<p>current username: {request.user.username}</p><p>server: {self.SERVER_NAME}</p>")
 

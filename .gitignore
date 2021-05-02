@@ -146,4 +146,6 @@ dmypy.json
 # profiling data
 .prof
 
+.join/
+join/
 .idea/

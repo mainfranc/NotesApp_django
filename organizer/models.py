@@ -30,7 +30,7 @@ class Note(models.Model):
     )
     importance_status = models.BooleanField(default=False)
     public_status = models.BooleanField(default=True)
-    task_date_time = models.DateTimeField(default=_set_date())
+    task_date_time = models.DateTimeField(default=_set_date)
     views = models.IntegerField(verbose_name="количество просмотров",
                                 default=0)
 
@@ -38,4 +38,10 @@ class Note(models.Model):
         return f'Note {self.title} by {format(self.task_date_time, "%d/%m/%y %H:%M")} author {self.author.username}'
 
 
+class Comment(models.Model):
+    note_id = models.ForeignKey(Note,
+                               on_delete=models.CASCADE,
+                               verbose_name='Related Note')
+    comment = models.TextField(max_length=255)
+    rating = models.IntegerField(default=0)
 
